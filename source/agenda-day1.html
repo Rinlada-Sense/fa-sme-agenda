@@ -197,6 +197,7 @@ html[data-lang="th"] .dragging-now .cell::after{content:"";opacity:0}
 .backlink:hover{text-decoration:underline}
 @media (max-width:860px){.donebar{padding:14px}.donebar .btn{width:100%;justify-content:center}}
 /* one strip, divided into actions */
+.privnote{margin:10px 4px 0;font-size:12px;line-height:1.45;color:var(--muted);text-align:center;text-wrap:pretty}
 .toolbar{display:flex;align-items:stretch;background:rgba(255,255,255,.94);border-radius:18px;box-shadow:0 8px 22px rgba(40,100,140,.16);margin-top:18px;overflow:hidden}
 .tbtn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:9px;border:0;background:transparent;color:var(--blue);font-weight:600;font-size:15px;line-height:1.2;padding:14px 16px;cursor:pointer;position:relative;transition:background .14s,color .14s}
 .tbtn+.tbtn::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:1.5px;background:#e2ecf2}
@@ -495,6 +496,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
         <button class="tbtn" id="ics"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.2" y="4.2" width="13.6" height="12.1" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.2 7.7h13.6M6.6 3v2.8M13.4 3v2.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.6 11h2.2M6.6 13.7h4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Add to calendar</span></button>
         <button class="tbtn" id="clear"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.9-4.4M16 3.5V7h-3.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Reset</span></button>
       </div>
+      <p class="privnote" id="privNote"></p>
     </section>
   </div>
 </div>
@@ -593,7 +595,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       addFirst:'Add a session first.', copied:'Agenda copied.', noCopy:'Copy isn’t available here.',
       imgSaved:'Image saved.', imgDl:'Image downloaded.', imgFail:'Couldn’t build the image.',
       icsSaved:'Calendar file saved.', icsDl:'Calendar file downloaded.', icsFail:'Couldn’t save the calendar file here.',
-      calBtn:'Add to calendar',
+      calBtn:'Add to calendar', privNote:'We count which sessions are chosen to help plan the event. No personal info is collected.',
       imgNoSave:'Couldn’t save the image here.',
       dragHere:'Drag a session here', holdHere:'Hold a card, then drag it here',
       tagline:'BUILD STRONG. ADAPT FAST. SCALE SMART WITH AI.',
@@ -638,7 +640,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       imgSaved:'บันทึกรูปแล้ว', imgDl:'ดาวน์โหลดรูปแล้ว', imgFail:'สร้างรูปไม่สำเร็จ',
       imgNoSave:'บันทึกรูปไม่ได้ในหน้านี้',
       icsSaved:'บันทึกไฟล์ปฏิทินแล้ว', icsDl:'ดาวน์โหลดไฟล์ปฏิทินแล้ว', icsFail:'บันทึกไฟล์ปฏิทินไม่ได้ในหน้านี้',
-      calBtn:'เพิ่มลงปฏิทิน',
+      calBtn:'เพิ่มลงปฏิทิน', privNote:'เรานับจำนวนการเลือกแต่ละหัวข้อเพื่อใช้วางแผนงาน โดยไม่เก็บข้อมูลส่วนตัว',
       dragHere:'ลากหัวข้อมาวางที่นี่', holdHere:'กดค้างที่การ์ด แล้วลากมาวางที่นี่',
       tagline:'BUILD STRONG. ADAPT FAST. SCALE SMART WITH AI.',
       subline:'เตรียมธุรกิจให้พร้อม Scale ในโลกที่เปลี่ยนไป',
@@ -1015,6 +1017,33 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   if(mq.addEventListener) mq.addEventListener('change',function(){render();setIntro()});
   if(mqStack.addEventListener) mqStack.addEventListener('change',function(){render()});
 
+  // ---------- anonymous pick counting (Google Sheets via Apps Script) ----------
+  // Sends: day, the sheet session ID in each of the 5 slots, which button, language, device and a random browser ID.
+  var PICKS_URL='https://script.google.com/macros/s/AKfycbwnhrL2LgctD4M5sWFt1Y8S5pUlmPwbKTHc03VhCvtlEKSuyQub2SRzhxrjCtvnpsRd/exec';
+  var SHEET_ID={};
+  (function(){var n={};S.forEach(function(s){n[s.day]=(n[s.day]||0)+1;SHEET_ID[s.id]='D'+s.day+'-'+(n[s.day]<10?'0':'')+n[s.day]})})();
+  var sentPicks={};
+  function browserId(){
+    try{var k='sme-expo-cid',v=localStorage.getItem(k);
+      if(!v){v=Math.random().toString(36).slice(2,12);localStorage.setItem(k,v)}return v}catch(e){return ''}
+  }
+  function trackPicks(action,ds){
+    try{
+      if(location.protocol==='file:')return;
+      ds.forEach(function(d){
+        var pl=PLAN[d],slots=['','','','',''];
+        Object.keys(pl).forEach(function(id){var s=byId(id);if(!s||!SHEET_ID[id])return;for(var i=0;i<s.span;i++)if(pl[id]+i<5)slots[pl[id]+i]=SHEET_ID[id]});
+        if(!slots.join(''))return;
+        var body=JSON.stringify({day:d,slots:slots,action:action,lang:lang,device:mq.matches?'phone':(COARSE?'tablet':'desktop'),client:browserId()});
+        if(sentPicks[body])return; // the same plan sent again in this visit is not counted twice
+        sentPicks[body]=1;
+        var blob=new Blob([body],{type:'text/plain'});
+        if(!(navigator.sendBeacon&&navigator.sendBeacon(PICKS_URL,blob)))
+          fetch(PICKS_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},body:body}).catch(function(){});
+      });
+    }catch(e){}
+  }
+
   // ---------- actions ----------
 
   $('clear').addEventListener('click',function(){
@@ -1037,6 +1066,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     });
     if(!any){toast(T('addFirst'));return}
     var t=lines.join('\n');
+    trackPicks('text',[1,2].filter(function(d){return Object.keys(PLAN[d]).length}));
     function fb(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(T('copied'))}catch(e){toast(T('noCopy'))}ta.remove()}
     try{navigator.clipboard.writeText(t).then(function(){toast(T('copied'))},fb)}catch(e){fb()}
   });
@@ -1321,7 +1351,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   $('ics').addEventListener('click',function(){
     var ds=[1,2].filter(function(d){return Object.keys(PLAN[d]).length});
     if(!ds.length){toast(T('addFirst'));return}
-    downloadIcs(ds);
+    downloadIcs(ds);trackPicks('calendar',ds);
   });
 
   function fontsReady(){
@@ -1335,7 +1365,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       var cv;
       try{cv=drawImage(ds)}catch(e){cv=null}
       if(!cv){toast(T('imgFail'));return res()}
-      cv.toBlob(function(b){if(b)deliver(b,ds.length>1?'1-2':ds[0]);else toast(T('imgFail'));res()},'image/png');
+      cv.toBlob(function(b){if(b){deliver(b,ds.length>1?'1-2':ds[0]);trackPicks('image',ds)}else toast(T('imgFail'));res()},'image/png');
     });
   }
   function downloadDays(which){
@@ -1398,7 +1428,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     $('langBtn').setAttribute('aria-label',T('langAria'));
     $('clear').querySelector('span').textContent=T('clear');
     $('copy').querySelector('span').textContent=T('copy');
-    $('ics').querySelector('span').textContent=T('calBtn');
+    $('ics').querySelector('span').textContent=T('calBtn');$('privNote').textContent=T('privNote');
     $('dlT').textContent=T('dlgT');
     $('dlDlg').querySelector('p').textContent=T('dlgP');
     $('dlDlg').querySelector('[data-dl="both"]').textContent=T('dlgBoth');

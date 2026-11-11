@@ -154,3 +154,10 @@ Merged from the preview (`preview/agenda-preview.html`) on 2026-11-11 and live o
 ## Syncing from the Google Sheet (user choice, 2026-11-11)
 The page stays self-contained; the sheet is NOT loaded live. When the user says "sync the sheet": read `Sessions!A1:O60` and `Speakers!A1:H60` with the Google Sheets connector, compare row by row with the `S` array (Day 1 ids a1–d4 = D1-01…D1-18 in order; Day 2 rows = D2-01…D2-19 → x1–x19), update titles (`t` is "EN : TH"), category, level, slots, then syntax-check, commit and push (Vercel auto-deploys). Show the user the list of changes. Speakers: the page still shows one generic placeholder (`speaker`/`role` strings) for every session; per-session speakers need code changes (card, canvas image, text copy, .ics) the first time real names appear in the sheet.
 First sync 2026-11-11: sheet and page already matched; speakers in the sheet were still placeholders ("Speaker 1"–"Speaker 8", "CEO, FlowAccount", no photos).
+
+## Pick counting (added 2026-11-11)
+- Every export (image download, copy as text, .ics) sends one anonymous record per day to a Google Apps Script web app (`PICKS_URL` in the page; script source `scripts/picks-collector.gs`, bound to a separate results sheet the user owns). Record: day, sheet session ID per slot (`SHEET_ID`, e.g. a2 → D1-02, x18 → D2-18; derived from the order of `S`), action (image/text/calendar), lang, device (phone/tablet/desktop), random browser ID (`sme-expo-cid` in localStorage). Nothing personal.
+- Sent with `navigator.sendBeacon` (text/plain), fetch no-cors fallback. Skipped on `file:` URLs; the same body is sent once per visit. Blocked on the claude.ai artifact by its CSP (fails silently).
+- Results tabs: Picks (raw rows), Most picked, Next session ("A then B" pairs; a workshop counts once, empty slots are skipped), Session list (IMPORTRANGE from the agenda sheet).
+- The order of `S` must stay in sheet order (D1-01… / D2-01…) or the IDs sent will be wrong.
+- Privacy note `#privNote` under the toolbar (Thai text drafted by Claude; needs native review).
