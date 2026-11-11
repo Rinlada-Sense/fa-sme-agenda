@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "mkdir -p dist && cp source/agenda-day1.html dist/index.html",
+  "outputDirectory": "dist",
+  "cleanUrls": true
+}
