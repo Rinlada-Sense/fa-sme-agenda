@@ -148,5 +148,5 @@ Merged from the preview (`preview/agenda-preview.html`) on 2026-11-11 and live o
 
 ## Hosting
 - GitHub: https://github.com/Rinlada-Sense/fa-sme-agenda (branch `main`).
-- Vercel: https://fa-sme-agenda.vercel.app — `vercel.json` copies `source/agenda-day1.html` to `dist/index.html`; only that page is public. Every push to `main` auto-deploys.
+- Vercel: https://fa-sme-agenda.vercel.app — `vercel.json` copies `source/agenda-day1.html` to `dist/index.html`; only that page is public. Every push to `main` auto-deploys. Commits must be authored as `Rinlada-Sense <354786790+Rinlada-Sense@users.noreply.github.com>` (set in the repo git config); Vercel Hobby blocks deploys from any other author.
 - The claude.ai artifact https://claude.ai/artifact/D8MWq6bq4btKfH1jcfuG5o is a separate copy and is only updated when republished.
