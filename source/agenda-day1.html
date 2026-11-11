@@ -324,6 +324,80 @@ html[data-lang="th"] .dragging-now .cell::after{content:"";opacity:0}
   .tray .empty{padding:10px 2px}
   .tray.collapsed .slotnav,.tray.collapsed .list{display:none}
 }
+/* ===== header at 75% on desktop: one unit scales logo, date, venue and tagline bar together ===== */
+@media (min-width:861px){.kv{--u:calc(min(100vw,1292px)/1292*.75)}}
+/* ===== intro under the header ===== */
+.intro{max-width:820px;margin:-2px auto 26px;text-align:center}
+.intro h2{margin:0 0 8px;font-size:32px;font-weight:700;color:var(--blue);line-height:1.2;letter-spacing:-.01em;text-wrap:balance}
+.intro h2 em{font-style:normal;color:inherit}
+/* Thai has no spaces, so it needs a wider line to avoid a lone last word */
+html[data-lang="th"] .intro p{max-width:68ch}
+.intro p{margin:0 auto 18px;max-width:58ch;font-size:16px;line-height:1.55;color:#3b4b5c;text-wrap:pretty}
+.steps{list-style:none;margin:0;padding:0;display:flex;justify-content:center;flex-wrap:wrap;gap:12px 40px}
+.steps li{position:relative;display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.55);cursor:default;border-radius:999px;padding:6px 16px 6px 6px;font-size:15px;font-weight:600;color:var(--ink);box-shadow:none;animation:stepin .6s cubic-bezier(.16,1,.3,1) both}
+.steps li:nth-child(2){animation-delay:.12s}
+.steps li:nth-child(3){animation-delay:.24s}
+@keyframes stepin{from{transform:translateY(10px)}}
+/* dashed connector between steps */
+.steps li+li::before{content:"";position:absolute;right:100%;top:50%;width:28px;margin-right:6px;border-top:2px dashed #a9cbe0}
+.si{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;flex:none}
+.si svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.si1{background:color-mix(in srgb,var(--r0) 16%,#fff);color:#0a6f9a}
+.si2{background:color-mix(in srgb,var(--r1) 16%,#fff);color:#0b7a5c}
+.si3{background:color-mix(in srgb,var(--r2) 18%,#fff);color:#a65800}
+@media (max-width:860px){
+  .intro{margin:0 auto 14px}
+  .intro h2{font-size:20px;margin-bottom:8px}
+  .intro p{display:none}
+  .steps{flex-wrap:nowrap;gap:6px}
+  .steps li{font-size:12px;padding:3px 10px 3px 3px;gap:6px;white-space:nowrap}
+  .steps li+li::before{display:none}
+  .si{width:24px;height:24px}
+  .si svg{width:14px;height:14px}
+}
+@media (min-width:861px) and (max-height:820px){
+  .intro{margin-bottom:16px}
+  .intro h2{font-size:26px}
+  .intro p{display:none}
+}
+/* ===== first-time guidance ===== */
+/* 1. the highlighted empty slot points at where sessions come from */
+body:not(.dragging-now) .cell.sel::after{content:"← Drag a session from the list"}
+html[data-lang="th"] body:not(.dragging-now) .cell.sel::after{content:"← ลากหัวข้อจากรายการมาวางที่นี่"}
+/* 2. the how-to line in the session list reads as an instruction, not a footnote */
+#slotMeta{color:var(--blue);font-weight:600}
+/* 3. clicking an empty slot visibly refreshes the session list */
+.list{border-radius:16px}
+.tray.flash .list{animation:trayflash .7s ease-out}
+@keyframes trayflash{0%{background:#dff1fa}100%{background:transparent}}
+/* 4. first visit only: the first card nudges with a label, until the first drop */
+.list:has(.nudge),.tray .list:has(.nudge){padding-top:16px}
+.tcard.nudge{animation:nudge 1.8s ease-in-out .5s 3}
+@keyframes nudge{0%,50%,100%{transform:none}20%{transform:translateX(10px)}35%{transform:translateX(2px)}}
+@keyframes nudgeup{0%,50%,100%{transform:none}20%{transform:translateY(-8px)}35%{transform:translateY(-2px)}}
+.tcard.nudge::after{content:attr(data-nudge);position:absolute;top:-12px;right:10px;background:var(--blue);color:#fff;font-size:11.5px;font-weight:600;line-height:1;padding:5px 10px;border-radius:999px;box-shadow:0 4px 10px rgba(40,100,140,.25);pointer-events:none;white-space:nowrap}
+@media (max-width:860px){
+  body:not(.dragging-now) .cell.sel::after{content:"↓ Hold a card below, then drag it here"}
+  html[data-lang="th"] body:not(.dragging-now) .cell.sel::after{content:"↓ กดค้างที่การ์ดด้านล่าง แล้วลากมาวางที่นี่"}
+  .tcard.nudge{animation-name:nudgeup}
+}
+/* direction-aware slot text: the list is beside the board from 1181px, above it 861-1180px, below it on phones */
+@media (min-width:861px) and (max-width:1180px){
+  body:not(.dragging-now) .cell.sel::after{content:"↑ Drag a session from the list above"}
+  html[data-lang="th"] body:not(.dragging-now) .cell.sel::after{content:"↑ ลากหัวข้อจากรายการด้านบนมาวางที่นี่"}
+  html.touch body:not(.dragging-now) .cell.sel::after{content:"↑ Hold a session above, then drag it here"}
+  html.touch[data-lang="th"] body:not(.dragging-now) .cell.sel::after{content:"↑ กดค้างที่หัวข้อด้านบน แล้วลากมาวางที่นี่"}
+}
+@media (min-width:1181px){
+  html.touch body:not(.dragging-now) .cell.sel::after{content:"← Hold a session in the list, then drag it here"}
+  html.touch[data-lang="th"] body:not(.dragging-now) .cell.sel::after{content:"← กดค้างที่หัวข้อในรายการ แล้วลากมาวางที่นี่"}
+}
+@media (max-width:860px){
+  html.touch body:not(.dragging-now) .cell.sel::after{content:"↓ Hold a card below, then drag it here"}
+  html.touch[data-lang="th"] body:not(.dragging-now) .cell.sel::after{content:"↓ กดค้างที่การ์ดด้านล่าง แล้วลากมาวางที่นี่"}
+}
+/* touch: the card answers the press before the 240ms hold starts the drag */
+.card.pressing{transform:scale(.97);transition:transform .2s cubic-bezier(.16,1,.3,1)}
 /* ===== desktop refinements (phones keep their own rules above) ===== */
 @media (min-width:861px){
   :root{--muted:#5e6c7a}
@@ -339,7 +413,7 @@ html[data-lang="th"] .dragging-now .cell::after{content:"";opacity:0}
   .slotnav .nav:hover:not(:disabled){color:#1679a8}
   .cell::after{opacity:1}
   .tbtn.tmain{background:linear-gradient(90deg,#1679a8,var(--blue))}
-  /* contrast preview on Room 3 only: deeper orange for orange text (pill text stays white, user choice) */
+  /* Room 3: deeper orange for orange text (pill text stays white, user choice) */
   .card.r2 .rm,.card.r2 .meta .when{color:#a65800}
 }
 @media (min-width:1181px){
@@ -378,6 +452,16 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     </div>
     <div class="kvright"><button type="button" class="langbtn" id="langBtn" aria-label="Switch language"></button></div>
   </header>
+
+  <section class="intro" id="intro" aria-labelledby="introT"><div class="intro-in">
+    <h2 id="introT">Build your own agenda</h2>
+    <p id="introP"></p>
+    <ol class="steps">
+      <li><span class="si si1" aria-hidden="true"><svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="14" height="5.5" rx="1.6"/><rect x="3" y="11" width="14" height="5.5" rx="1.6"/></svg></span><span id="st1"></span></li>
+      <li><span class="si si2" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 2.8v14.4M2.8 10h14.4M10 2.8 7.6 5.2M10 2.8l2.4 2.4M10 17.2l-2.4-2.4M10 17.2l2.4-2.4M2.8 10l2.4-2.4M2.8 10l2.4 2.4M17.2 10l-2.4-2.4M17.2 10l-2.4 2.4"/></svg></span><span id="st2"></span></li>
+      <li><span class="si si3" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 3v10M5.5 9l4.5 4.5L14.5 9M4 16.5h12"/></svg></span><span id="st3"></span></li>
+    </ol>
+  </div></section>
 
   <div class="daytabs" role="tablist" aria-label="Event day">
     <button type="button" role="tab" data-day="1" aria-selected="true">Day 1<span>18 DEC</span></button>
@@ -481,7 +565,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       lunch:'Lunch Break (12.15 - 13.00)', langName:'ENG', langAria:'Switch to Thai',
       planned:function(n){return n+' of 5 planned'},
       count:function(n){return n+' session'+(n===1?'':'s')},
-      dragDesk:' · drag one onto a time', dragMob:' · hold a card, then drag it up', dragTouch:' · hold a card, then drag it',
+      dragDesk:' · drag one onto the board', dragMob:' · hold a card, then drag it up', dragTouch:' · hold a card, then drag it',
       inRoom:function(r){return 'You are in '+r},
       taken:function(t){return 'You picked '+t+' for this time. Press × on it to change your mind.'},
       noneAt:'No sessions at this time.',
@@ -501,7 +585,9 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       planBtn:function(d){return 'Plan Day '+d},
       backTo:function(d,done){return (done?'Back to Day ':'Plan Day ')+d},
       dlBtn:'Download my schedule',
-      clear:'Reset', copy:'Copy as text', dlAny:'Download image', dlDay:function(d){return 'Download Day '+d+' image'},
+      clear:'Reset', copy:'Copy as text', dlAny:'Download image', showing:function(w){return 'Showing sessions at '+w}, nudgeTxt:function(dir,touch){return (touch?'Hold, then drag':'Drag me')+{side:' to the board →',down:' down to the board ↓',up:' up ↑'}[dir]},
+      cardTap:function(dir,touch){return (touch?'Hold the card, then drag it ':'Drag the card ')+{side:'onto a time on the right',down:'down onto a time',up:'up onto a time'}[dir]},
+      missDrop:'Drop it on a time slot to add it', introT:'Build <em>your own</em> agenda', introP:'Pick one session for each time slot on both days. When your day is full, save it as an image or add it to your calendar.', st1:'Choose a session', st2d:'Drag it onto your day', st1m:'Choose', st2m:'Hold & drag up', st2t:'Hold it, then drag it onto your day', st3m:'Save', st3:'Save your agenda', dlDay:function(d){return 'Download Day '+d+' image'},
       dlgT:'Which day do you want to download?', dlgP:'One image, with the sessions you picked.',
       dlgBoth:'Both days in one image', cancel:'Cancel', empty:'empty',
       addFirst:'Add a session first.', copied:'Agenda copied.', noCopy:'Copy isn’t available here.',
@@ -543,7 +629,9 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       planBtn:function(d){return 'ไปจัดตารางเรียน Day '+d},
       backTo:function(d,done){return (done?'กลับไปดู Day ':'ไปจัดตารางเรียน Day ')+d},
       dlBtn:'ดาวน์โหลดตารางของฉัน',
-      clear:'รีเซ็ต', copy:'คัดลอกเป็นข้อความ', dlAny:'ดาวน์โหลดรูป', dlDay:function(d){return 'ดาวน์โหลดรูปวันที่ '+d},
+      clear:'รีเซ็ต', copy:'คัดลอกเป็นข้อความ', dlAny:'ดาวน์โหลดรูป', showing:function(w){return 'แสดงหัวข้อช่วง '+w}, nudgeTxt:function(dir,touch){return (touch?'กดค้าง แล้วลาก':'ลาก')+{side:'ไปวางในตาราง →',down:'ลงไปวางในตาราง ↓',up:'ขึ้น ↑'}[dir]},
+      cardTap:function(dir,touch){return (touch?'กดค้างที่การ์ด แล้วลาก':'ลากการ์ด')+{side:'ไปวางในตารางด้านขวา',down:'ลงไปวางในตาราง',up:'ขึ้นไปวางในตาราง'}[dir]},
+      missDrop:'วางลงในช่องเวลาเพื่อเพิ่มหัวข้อ', introT:'จัดตารางเรียน<em>ของคุณเอง</em>', introP:'เลือกหัวข้อที่สนใจได้ช่วงละ 1 หัวข้อ ทั้ง 2 วัน จัดครบแล้วบันทึกเป็นรูป หรือเพิ่มลงปฏิทินได้เลย', st1:'เลือกหัวข้อ', st2d:'ลากไปวางในตาราง', st1m:'เลือกหัวข้อ', st2m:'กดค้าง แล้วลากขึ้น', st2t:'กดค้าง แล้วลากไปวางในตาราง', st3m:'บันทึก', st3:'บันทึกตาราง', dlDay:function(d){return 'ดาวน์โหลดรูปวันที่ '+d},
       dlgT:'โหลดรูป Agenda เก็บไว้เลย', dlgP:'สามารถดูตารางทั้งสองวันได้ในรูปเดียว',
       dlgBoth:'ทั้งสองวันในรูปเดียว', cancel:'ยกเลิก', empty:'ยังว่าง',
       addFirst:'เลือกหัวข้อก่อน', copied:'คัดลอกตารางแล้ว', noCopy:'คัดลอกไม่ได้ในหน้านี้',
@@ -577,11 +665,15 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     placed=PLAN[1];
   }}}catch(e){}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(PLAN))}catch(e){}}
+  var SEEN_KEY='sme-expo-seen-drag',seenDrag=false;
+  try{seenDrag=localStorage.getItem(SEEN_KEY)==='1'}catch(e){}
 
   var $=function(i){return document.getElementById(i)};
   var mq=window.matchMedia?window.matchMedia('(max-width:860px)'):{matches:false};
   var COARSE=!!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches);
   if(COARSE)document.documentElement.classList.add('touch');
+  var mqStack=window.matchMedia?window.matchMedia('(max-width:1180px)'):{matches:false};
+  function layoutDir(){return mq.matches?'up':(mqStack.matches?'down':'side')}
   function toBoard(){}
   function toTray(){}
   var board=$('board'), list=$('list');
@@ -632,10 +724,11 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     var r=resolve(id);
     if(!r.res.ok){toast(r.res.why);return false}
     var moved=(slot!==null&&slot!==undefined&&slot!==r.start);
-    var was=planned(day);placed[id]=r.start;tslot=freeSlot(r.start+byId(id).span);save();render();if(was<5&&planned(day)===5)showDone();
+    var was=planned(day);if(!seenDrag){seenDrag=true;try{localStorage.setItem(SEEN_KEY,'1')}catch(e){}}placed[id]=r.start;tslot=freeSlot(r.start+byId(id).span);save();render();if(was<5&&planned(day)===5)showDone();
     toast(moved?T('moved')(SLOTTXT[r.start]):T('added')(SLOTTXT[r.start]));
     return true;
   }
+  function flashTray(){var t=$('tray');t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash')}
   function showDone(){
     var b=$('donebar');if(mq.matches||b.hidden||!b.scrollIntoView)return;
     var rm=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches);
@@ -645,6 +738,15 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   function focusTray(){
     var c=list.querySelector('.tcard')||($('nextSlot').disabled?$('prevSlot'):$('nextSlot'));
     try{c.focus({preventScroll:true})}catch(e){c.focus()}
+  }
+  function removeWithUndo(id){
+    var d=day,was=placed[id],s=byId(id);
+    unplace(id);
+    toast(T('removed'),function(){
+      for(var i=0;i<s.span;i++){for(var k in PLAN[d]){var o=byId(k),p=PLAN[d][k];
+        if(was+i>=p&&was+i<p+o.span){toast(T('clash')(short(sTitle(o)),SLOTTXT[was+i]));return}}}
+      PLAN[d][id]=was;if(day===d)tslot=freeSlot(was+s.span);save();render();
+    });
   }
   function unplace(id){var s=byId(id);delete placed[id];tslot=s.slot;save();render()}
 
@@ -702,10 +804,17 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       if(mq.matches||COARSE)bindPDrag(b,s.id,'hold');
       b.innerHTML=tagsHTML(s)+'<div class="ttl">'+esc(sTitle(s))+'</div><div class="meta">'+whenHTML(s)+'<span>'+ROOMS[s.room]+'</span></div>';
       b.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();if(put(s.id,null))focusTray()}});
+      b.addEventListener('click',function(){
+        if(justDragged)return;
+        b.dataset.nudge=T('nudgeTxt')(layoutDir(),mq.matches||COARSE);
+        b.classList.remove('nudge');void b.offsetWidth;b.classList.add('nudge');
+        toast(T('cardTap')(layoutDir(),mq.matches||COARSE));
+      });
       b.addEventListener('dragstart',function(e){startDrag(e,s.id)});
       b.addEventListener('dragend',endDrag);
       list.appendChild(b);
     });
+    if(!seenDrag){var nf=list.querySelector('.tcard');if(nf){nf.classList.add('nudge');nf.dataset.nudge=T('nudgeTxt')(layoutDir(),mq.matches||COARSE)}}
   }
 
   function renderBoard(){
@@ -727,12 +836,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       el.style.gridRow=GR[st]+' / span '+s.span;
       el.innerHTML=tagsHTML(s)+'<div class="ttl"><span>'+esc(sTitle(s))+'</span></div>'+speakers(s.sp,ROOMS[s.room]);
       var x=document.createElement('button');x.type='button';x.className='x';x.setAttribute('aria-label',T('removeAria')+': '+sTitle(s));x.textContent='×';
-      x.addEventListener('click',function(e){
-        e.stopPropagation();var kb=e.detail===0,d=day,was=placed[id];
-        unplace(id);
-        toast(T('removed'),function(){if(day!==d)return;var c=check(id);if(!c.ok){toast(c.why);return}placed[id]=was;tslot=freeSlot(was+byId(id).span);save();render()});
-        if(kb)focusTray();
-      });
+      x.addEventListener('click',function(e){e.stopPropagation();removeWithUndo(id);if(e.detail===0)focusTray()});
       el.appendChild(x);
       if(mq.matches||COARSE)bindPDrag(el,id,'hold');
       el.addEventListener('dragstart',function(e){startDrag(e,id);setTimeout(function(){el.classList.add('dragging')},0)});
@@ -785,6 +889,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     tslot=+cell.dataset.slot;
     if(mq.matches) expandDock();
     render();
+    flashTray();toast(T('showing')(SLOTTXT[tslot]));
   });
   var tray=$('tray');
   tray.addEventListener('dragover',function(e){if(drag&&placed[drag]!==undefined){e.preventDefault();tray.classList.add('over')}});
@@ -801,11 +906,11 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       if(e.target.closest&&e.target.closest('.x')) return;
       var sx=e.clientX,sy=e.clientY,pid=e.pointerId,touch=e.pointerType!=='mouse',on=false,last=e,hold=0;
       function begin(ev){
-        on=true;
+        on=true;node.classList.remove('pressing');
         try{node.setPointerCapture(pid)}catch(z){}
         pBegin(node,id,ev);
       }
-      if(mode==='hold'&&touch) hold=setTimeout(function(){if(!on)begin(last)},240);
+      if(mode==='hold'&&touch){node.classList.add('pressing');hold=setTimeout(function(){if(!on)begin(last)},240)}
       function mv(ev){
         if(ev.pointerId!==pid) return;
         last=ev;
@@ -819,7 +924,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
         if(ev.cancelable) ev.preventDefault();
       }
       function stop(){
-        clearTimeout(hold);
+        clearTimeout(hold);node.classList.remove('pressing');
         node.removeEventListener('pointermove',mv);window.removeEventListener('pointermove',mv);
         node.removeEventListener('pointerup',up);window.removeEventListener('pointerup',up);
         node.removeEventListener('pointercancel',cancel);window.removeEventListener('pointercancel',cancel);
@@ -847,6 +952,10 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     $('hint').className='hintbar';$('hint').textContent='';
     if(navigator.vibrate){try{navigator.vibrate(8)}catch(e){}}
     pPlace();pLoop();
+    if(mq.matches&&!pd.wasPlaced){
+      var sc=board.querySelector('.cell.sel'),dt=$('tray').getBoundingClientRect().top;
+      if(sc){var cr=sc.getBoundingClientRect();if(cr.top>dt-60||cr.bottom<60)window.scrollBy({top:cr.top-Math.max(70,(dt-cr.height)/2),behavior:'smooth'})}
+    }
   }
   function pPlace(){pd.g.style.transform='translate('+(pd.x-107)+'px,'+(pd.y-LIFT-34)+'px) rotate(-2deg)'}
   function pSlot(x,y){
@@ -889,7 +998,8 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     justDragged=true;setTimeout(function(){justDragged=false},120);
     if(cancelled) return;
     if(d.hot){if(d.hot.res.ok)put(d.id,d.hot.start);else toast(d.hot.res.why)}
-    else if(overDock&&d.wasPlaced){unplace(d.id);toast(T('removed'))}
+    else if(overDock&&d.wasPlaced){removeWithUndo(d.id)}
+    else if(!d.wasPlaced){toast(T('missDrop'))}
   }
 
   $('prevSlot').addEventListener('click',function(){if(tslot>0){tslot--;render()}});
@@ -902,7 +1012,8 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   }
   function expandDock(){if($('tray').classList.contains('collapsed'))setDock(false)}
   $('dockToggle').addEventListener('click',function(){setDock(!$('tray').classList.contains('collapsed'))});
-  if(mq.addEventListener) mq.addEventListener('change',function(){render()});
+  if(mq.addEventListener) mq.addEventListener('change',function(){render();setIntro()});
+  if(mqStack.addEventListener) mqStack.addEventListener('change',function(){render()});
 
   // ---------- actions ----------
 
@@ -1273,6 +1384,13 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   });
 
   // ---------- language switch ----------
+  function setIntro(){
+    var ph=mq.matches;
+    $('introT').innerHTML=T('introT');$('introP').textContent=T('introP');
+    $('st1').textContent=ph?T('st1m'):T('st1');
+    $('st2').textContent=ph?T('st2m'):(COARSE?T('st2t'):T('st2d'));
+    $('st3').textContent=ph?T('st3m'):T('st3');
+  }
   function applyLang(){
     document.documentElement.lang=lang;
     document.documentElement.setAttribute('data-lang',lang);
@@ -1284,7 +1402,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     $('dlT').textContent=T('dlgT');
     $('dlDlg').querySelector('p').textContent=T('dlgP');
     $('dlDlg').querySelector('[data-dl="both"]').textContent=T('dlgBoth');
-    $('dlX').textContent=T('cancel');
+    $('dlX').textContent=T('cancel');setIntro();
     document.querySelectorAll('.daytabs button[data-day]').forEach(function(b){
       var d=+b.dataset.day;b.innerHTML=T('day')+' '+d+'<span>'+DAYS[d].date+'</span>';
     });
