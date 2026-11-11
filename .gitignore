@@ -3,3 +3,5 @@ node_modules/
 /out/
 *.render.png
 dist/
+.vercel
+.env*
