@@ -150,3 +150,7 @@ Merged from the preview (`preview/agenda-preview.html`) on 2026-11-11 and live o
 - GitHub: https://github.com/Rinlada-Sense/fa-sme-agenda (branch `main`).
 - Vercel: https://fa-sme-agenda.vercel.app — `vercel.json` copies `source/agenda-day1.html` to `dist/index.html`; only that page is public. Every push to `main` auto-deploys. Commits must be authored as `Rinlada-Sense <354786790+Rinlada-Sense@users.noreply.github.com>` (set in the repo git config); Vercel Hobby blocks deploys from any other author.
 - The claude.ai artifact https://claude.ai/artifact/D8MWq6bq4btKfH1jcfuG5o is a separate copy and is only updated when republished.
+
+## Syncing from the Google Sheet (user choice, 2026-11-11)
+The page stays self-contained; the sheet is NOT loaded live. When the user says "sync the sheet": read `Sessions!A1:O60` and `Speakers!A1:H60` with the Google Sheets connector, compare row by row with the `S` array (Day 1 ids a1–d4 = D1-01…D1-18 in order; Day 2 rows = D2-01…D2-19 → x1–x19), update titles (`t` is "EN : TH"), category, level, slots, then syntax-check, commit and push (Vercel auto-deploys). Show the user the list of changes. Speakers: the page still shows one generic placeholder (`speaker`/`role` strings) for every session; per-session speakers need code changes (card, canvas image, text copy, .ics) the first time real names appear in the sheet.
+First sync 2026-11-11: sheet and page already matched; speakers in the sheet were still placeholders ("Speaker 1"–"Speaker 8", "CEO, FlowAccount", no photos).
