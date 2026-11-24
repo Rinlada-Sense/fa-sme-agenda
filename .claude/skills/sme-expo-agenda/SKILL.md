@@ -40,19 +40,22 @@ A bilingual (English/Thai) landing page for **FlowAccount's SME How to Scale Exp
 - **Language switch** (`#langBtn`, top-right): pill with a flag and the *current* language ("ENG" US flag / "ไทย" Thai flag). Stored in `localStorage['sme-expo-lang']`. Default `en`.
 - **Persistence**: `localStorage['sme-expo-agenda-v2'] = {1:{sessionId:startSlot}, 2:{…}}`. Always wrap storage access in try/catch (the artifact sandbox can block it).
 
-## Data model
+## Data model (final agenda, synced 2026-11-24)
 
 ```js
-S = [{ id, day, room /*0-3*/, tag /*'AI & Tech'|'Marketing'|'Tax & Finance'|'Operation'*/,
-       lvl /*'Basic'|'Experienced'*/, span /*1|2*/, sp /*speaker count*/,
-       t /*'English title : ชื่อภาษาไทย'*/, slot /*derived*/ }]
+SPK = { SP01:['name','role, company'], ... }            // from the sheet's Speakers tab
+S = [{ id /*sheet Session ID, e.g. 'D1-01'*/, day, room /*0-3*/, slot /*start, 0-4*/, span /*1|2*/,
+       tag /*category or '' for classroom blocks*/, lvl /*'' | 'Beginner' | 'Intermediate'*/,
+       lap /*1 = laptop required*/, sp /*[speaker ids]*/, t /*title as in the official agenda*/ }]
 ```
-- `slot` is **derived**: sessions in the same `day+room` are placed one after another using `span` (`acc[day-room]` in the IIFE after the S array). When wiring the sheet, use its "Start slot" column directly and delete the derivation.
-- `sTitle(s)` returns the English half or the Thai half of `t` depending on language.
-- Day 1 ids: `a1–a5` (Room 1), `b1–b5` (Room 2), `c1–c4` (Room 3; `c3` is a 2-slot workshop), `d1–d4` (Room 4; `d1` is a 2-slot workshop). **Day 2 ids `x1–x19` are placeholders** ("Day 2 session title to be announced") mirroring the sheet's Day 2 rows. All speakers are the placeholder "Speaker name / CEO, FlowAccount".
-- Rooms: Room 1 `#0e9bd0`, Room 2 `#14b58a`, Room 3 `#ff9b14`, Room 4 `#ff7ea0`. Card colour = room colour; the room name sits bottom-right of each placed card.
-- **Google Sheet tabs:** Read me, Event, Rooms, Time slots, Breaks, Sessions, Speakers, Lists. `Sessions` columns A–K are inputs (Session ID, Day, Room, Start slot, Slots, Category, Level, Title EN, Title TH, Speaker 1 ID, Speaker 2 ID); L–O are formulas (End slot, Time, Speakers, Check). Blue text = input, light yellow = placeholder. Day 2 date (19 Dec 2026) is an assumption to confirm.
-- **Planned wiring (not done):** publish Event/Rooms/Time slots/Breaks/Sessions/Speakers as CSV and load them at runtime, keeping the page a static file. Note the Claude.ai artifact sandbox blocks outside fetches; a real host does not.
+- Ids ARE the sheet Session IDs, so pick tracking sends them as is (`SHEET_ID[id]=id`). Slots come from the sheet's Start slot column (no derivation).
+- Titles: the official agenda has one title per session (mostly Thai), so EN and TH show the same text. `sTitle()` still splits on ' : ' if an EN/TH pair is ever added.
+- Categories (always English): Strategy, People, Technology & AI, Tax & Legal, Accounting & Finance, Sales & Marketing. Levels shown in English as in the official agenda; blank = no pill.
+- Classroom blocks ("Classroom from Canva", "Coming Soon", "Classroom from LINE for Business") have no tag and no speakers.
+- Laptop pill: own line on tray cards, inline next to the category on board cards (`tagsHTML(s,true)`), inline in the image, and in the .ics description. TH text "นำโน้ตบุ๊กมาด้วย" is Claude's draft.
+- **Per-day slot times**: `SLOTS_BY`, `SLOTTXT_BY`, `SLOT_TIMES_BY`; `setDay()` swaps `SLOTS`/`SLOTTXT`. Day 2 starts at 10.00: its morning sessions are one 2-slot block (slots 0-1, label "10.00 – 12.15"); slot 1 has no starts, so `liveSlot(d,i)` makes the tray stepper skip it, the board shows one tall empty cell, and the image draws one "No session picked" row.
+- Room floor lines `ROOMV` (Room 1 Sasin Hall ชั้น 9, Room 2 Room 723 ชั้น 7, Room 3 Room 821 ชั้น 8, Room 4 Room 822 ชั้น 8) are used in Copy as text and the .ics location. `venue` is now "Sasin School of Management".
+- Speaker avatars are still the generic icon (no photos yet).
 
 ## Header (the "KV" lockup)
 

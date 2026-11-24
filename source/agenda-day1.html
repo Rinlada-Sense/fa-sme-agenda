@@ -119,6 +119,11 @@ h1 .star{width:.62em;height:auto;flex:none;align-self:flex-start;margin-top:-.02
 /* session card */
 .card{--c:var(--r0);background:#fff;border:2px solid var(--c);border-radius:14px;padding:8px 9px 8px;display:flex;flex-direction:column;gap:6px;text-align:left;position:relative;min-width:0}
 .card.r0{--c:var(--r0)}.card.r1{--c:var(--r1)}.card.r2{--c:var(--r2)}.card.r3{--c:var(--r3)}
+.tagl{display:flex;align-items:center;gap:6px;min-width:0}
+.lap{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;max-width:100%;background:color-mix(in srgb,var(--c) 13%,#fff);color:var(--navy);font-size:10.5px;font-weight:600;line-height:1;padding:4px 9px 4px 7px;border-radius:999px;white-space:nowrap}
+.lap svg{width:14px;height:14px;flex:none;color:var(--navy)}
+.placed .lap{font-size:11.5px}
+.placed.long .tags{padding-right:14px}
 .tags{display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:6px;min-width:0}
 .tag{background:var(--c);color:#fff;font-weight:600;font-size:10px;line-height:1;padding:4px 9px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .lvl{font-weight:600;font-size:10px;line-height:1;padding:3px 10px;border-radius:999px;border:1.5px solid var(--navy);white-space:nowrap}
@@ -518,44 +523,88 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   var KEY='sme-expo-agenda-v2';
   var ROOMS=['Room 1','Room 2','Room 3','Room 4'];
   var RCOL=['#0e9bd0','#14b58a','#ff9b14','#ff7ea0'];
-  var SLOTS=['9.00 –<br>10.30','10.45 –<br>12.15','13.00 –<br>14.30','14.45 –<br>16.15','16.30 –<br>18.00'];
-  var SLOTTXT=['9.00 – 10.30','10.45 – 12.15','13.00 – 14.30','14.45 – 16.15','16.30 – 18.00'];
+  // Slot times per day. Day 2 starts at 10.00 with one long morning block, so its slots 1 and 2 share one label.
+  var SLOTS_BY={1:['9.00 –<br>10.30','10.45 –<br>12.15','13.00 –<br>14.30','14.45 –<br>16.15','16.30 –<br>18.00'],
+               2:['10.00 –<br>12.15','','13.00 –<br>14.30','14.45 –<br>16.15','16.30 –<br>18.00']};
+  var SLOTTXT_BY={1:['9.00 – 10.30','10.45 – 12.15','13.00 – 14.30','14.45 – 16.15','16.30 – 18.00'],
+               2:['10.00 – 12.15','10.00 – 12.15','13.00 – 14.30','14.45 – 16.15','16.30 – 18.00']};
+  var SLOTS=SLOTS_BY[1],SLOTTXT=SLOTTXT_BY[1];   // the day on screen; setDay() switches them
   var GR=[2,3,5,6,7]; // grid row for each slot
   var DAYS={1:{title:'AGENDA DAY 1',date:'18 DEC',full:'18 Dec'},2:{title:'AGENDA DAY 2',date:'19 DEC',full:'19 Dec'}};
+  var ROOMV={en:['Sasin Hall, 9th floor','Room 723, 7th floor','Room 821, 8th floor','Room 822, 8th floor'],
+             th:['Sasin Hall ชั้น 9','Room 723 ชั้น 7','Room 821 ชั้น 8','Room 822 ชั้น 8']};
 
-  var AI='AI & Tech';
+  // Agenda data, synced from the Google Sheet (Sessions + Speakers tabs). id = the sheet's Session ID.
+  // room 0-3, slot 0-4 (start), span = number of slots, lvl '' = no level shown, lap 1 = laptop required.
+  var SPK={
+    SP01:['ดร. จุฑาวรรณ คาร์บาฮูตา-กองบริสุทธิ์','Lecturer, Sasin School of Management'],
+    SP02:['ถนอม เกตุเอม','เจ้าของเพจ TaxBugnoms'],
+    SP03:['กฤตนัน วิโรจน์สายสี','Founder, Sales101'],
+    SP04:['ดร. ศุภวัตร ลิขิตธนวงศ์','Partner, Lakeshore Capital Partners'],
+    SP05:['ผศ.ดร. ปิยะชาติ ภิรมย์สวัสดิ์','Deputy Director of Learning Solution, Sasin School of Management'],
+    SP06:['อนุวัฒน์ งามประเสริฐกุล','Co-founding Partner, IAS Advisory Co., Ltd.'],
+    SP07:['ศุภโชติ ประสานเกียรติราช','Partner, IAS Advisory Co., Ltd.'],
+    SP08:['สุภาณี อนุวงศ์ศวเวทย์','CEO Novituz, Former CFO COO at Microsoft TH,VN'],
+    SP09:['วรพจน์ กิ่งแก้วก้านทอง','Head of Investment, Beacon Venture Capital'],
+    SP10:['สุทธิณี เทพปรียะพล','AI Enablement & SME Transformation, FlowAccount'],
+    SP11:['อธิวุฒิ พันธุ์ปรีชากิจ','Senior Associate, Chandler Mori Hamada'],
+    SP12:['จิดาภา ประยูรรัตน์','Founder & CEO, ASAP Project'],
+    SP13:['วงศกร นิมมิต','เจ้าของเพจ บริหารงานแบบคนไอที'],
+    SP14:['ณัฐพิชญ์ รัตน์ปุณภพ','Senior Product Specialist, FlowAccount'],
+    SP15:['พัชรี พาตินธุ','Senior Product Specialist, FlowAccount'],
+    SP16:['กานต์ โชครุ่งธรานนท์','Chief of Staff, FlowAccount'],
+    SP17:['พิมพ์ใจ อริจักรวุธ','CEO, DEXTA Consulting Co., Ltd.'],
+    SP18:['เปรม โชติพานิช','Owner of Data Karate, AI engineer'],
+    SP19:['กฤษ เถตุศร','เจ้าของเพจ บัญชีคลับ'],
+    SP20:['ทีปกร วุฒิพิทยามงคล','Writer, Translator, and Founder of Geppetto Studio'],
+    SP21:['วีรี สิรสุนทร','CEO & Co-Founder, PRIMO'],
+    SP22:['กฤษฎา ชุตินธร','CEO, FlowAccount'],
+    SP23:['ทรีฟ แจเฟอรี','Founder & CEO, Happily.ai'],
+    SP24:['ทาริฟ แจเฟอรี','Chief Business Officer, Happily.ai'],
+    SP25:['ภาณุพันธุ์ อุดมสุวรรณกุล','Partner, Chandler MHM Limited'],
+    SP26:['โสมิกา ภคภาสน์วิวัฒน์','Partner, Baker & McKenzie Ltd.'],
+    SP27:['ปุณยวีร์ จันทรขจร','Strategic Advisor, Data Driven'],
+    SP28:['เต็มศิริ สุจริตจันทร์','CEO, AccelWise'],
+    SP29:['วัชระ สระสินกุล','Founder, AI Film Director, Creative Strategist, Digital Marketing Expert, Trouble Wine Studio'],
+    SP30:['จุฑาทิพย์ สุขสุเพิ่ม','AI instructor, AI Specialist, Trouble Wine Studio'],
+    SP31:['ธนะสิษฐ์ ใจเพชรน้ำทิพย์','Founder, MuchRoom Consultancy']
+  };
   var S=[
-    {id:'a1',room:0,tag:AI,lvl:'Basic',span:1,sp:1,t:'Scale Faster and Smarter with AI : ขยายธุรกิจในยุคใหม่ได้เร็วขึ้นด้วย AI'},
-    {id:'a2',room:0,tag:AI,lvl:'Experienced',span:1,sp:1,t:'AI Agents for SMEs : ให้ AI ช่วยทำงานแทนทีมคุณ'},
-    {id:'a3',room:0,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Automate Your Back Office : ระบบหลังบ้านอัตโนมัติ'},
-    {id:'a4',room:0,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Data to Decisions : ตัดสินใจเร็วด้วยข้อมูลธุรกิจ'},
-    {id:'a5',room:0,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Build an AI-Ready Team : สร้างทีมพร้อมใช้ AI'},
-    {id:'b1',room:1,tag:'Marketing',lvl:'Basic',span:1,sp:1,t:'Grow Sales Online : ขายออนไลน์ให้โตอย่างยั่งยืน'},
-    {id:'b2',room:1,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Content That Converts with AI : คอนเทนต์ขายได้ด้วย AI'},
-    {id:'b3',room:1,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Smart CRM for SMEs : บริหารลูกค้าอย่างมืออาชีพ'},
-    {id:'b4',room:1,tag:AI,lvl:'Basic',span:1,sp:1,t:'AI 101 for Business Owners : เริ่มใช้ AI ภายใน 30 วัน'},
-    {id:'b5',room:1,tag:AI,lvl:'Experienced',span:1,sp:1,t:'From Data to Dashboard : ทำแดชบอร์ดธุรกิจด้วย AI'},
-    {id:'c1',room:2,tag:'Tax & Finance',lvl:'Basic',span:1,sp:1,t:'Tax Planning Made Simple : วางแผนภาษีสำหรับ SME'},
-    {id:'c2',room:2,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Cash Flow Forecasting with AI : คาดการณ์กระแสเงินสดด้วย AI'},
-    {id:'c3',room:2,tag:AI,lvl:'Basic',span:2,sp:2,t:'Workshop: Run Your Business with AI : เวิร์กช็อปบริหารธุรกิจด้วย AI'},
-    {id:'c4',room:2,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Future-Proof Your Finance : การเงินพร้อมสำหรับอนาคต'},
-    {id:'d1',room:3,tag:'Operation',lvl:'Basic',span:2,sp:2,t:'Workshop: Streamline Operations : เวิร์กช็อปปรับระบบปฏิบัติการ'},
-    {id:'d2',room:3,tag:AI,lvl:'Basic',span:1,sp:1,t:'Inventory & Ops with AI : บริหารสต็อกด้วย AI'},
-    {id:'d3',room:3,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Automate Approvals : ระบบอนุมัติอัตโนมัติ'},
-    {id:'d4',room:3,tag:AI,lvl:'Experienced',span:1,sp:1,t:'Scale Your Team Without Chaos : ขยายทีมโดยไม่วุ่นวาย'}
+    {id:'D1-01',day:1,room:0,slot:0,span:1,tag:'Strategy',lvl:'',lap:0,sp:['SP01'],t:'Strategic Growth in Digital Economy: เข้าใจเกมธุรกิจยุคดิจิทัล สร้างโอกาสเติบโตให้ SME'},
+    {id:'D1-02',day:1,room:0,slot:1,span:1,tag:'',lvl:'',lap:0,sp:[],t:'Classroom from Canva'},
+    {id:'D1-03',day:1,room:0,slot:2,span:1,tag:'',lvl:'',lap:0,sp:[],t:'Coming Soon'},
+    {id:'D1-04',day:1,room:0,slot:3,span:1,tag:'Tax & Legal',lvl:'',lap:0,sp:['SP02'],t:'ภาษี 101 สำหรับเจ้าของกิจการ: รู้เรื่องภาษี จัดการเงินส่วนตัวกับธุรกิจให้ถูกต้อง'},
+    {id:'D1-05',day:1,room:0,slot:4,span:1,tag:'Sales & Marketing',lvl:'',lap:0,sp:['SP03'],t:'สร้างทีมขายให้เป็นระบบ เพิ่มยอดขาย โดยไม่ต้องลงไปขายเองฉบับมือใหม่'},
+    {id:'D1-06',day:1,room:1,slot:0,span:1,tag:'Strategy',lvl:'',lap:0,sp:['SP04'],t:'กลยุทธ์ภาคปฏิบัติ 2.0: วางกลยุทธ์ให้ชัด ทำให้ได้ผลในยุค AI'},
+    {id:'D1-07',day:1,room:1,slot:1,span:1,tag:'People',lvl:'',lap:0,sp:['SP05'],t:'Behavioural Science for SMEs: เข้าใจพฤติกรรมคน สื่อสารให้ตรงใจ สร้างผลลัพธ์ให้ธุรกิจ'},
+    {id:'D1-08',day:1,room:1,slot:2,span:1,tag:'Tax & Legal',lvl:'',lap:0,sp:['SP06', 'SP07'],t:'เคล็ดลับ Holding Company ที่ SME ก็ทำได้: ประหยัดภาษี วางโครงสร้างธุรกิจ พร้อมขยายกิจการ'},
+    {id:'D1-09',day:1,room:1,slot:3,span:1,tag:'People',lvl:'',lap:0,sp:['SP08'],t:'The Power of Culture: ถอดบทเรียนองค์กรระดับโลก สร้างทีมที่พร้อมเติบโตและเปลี่ยนแปลง'},
+    {id:'D1-10',day:1,room:1,slot:4,span:1,tag:'Accounting & Finance',lvl:'',lap:0,sp:['SP09'],t:'เข้าใจการประเมินมูลค่า SME เตรียมธุรกิจให้พร้อมรับการลงทุนจาก VC'},
+    {id:'D1-11',day:1,room:2,slot:0,span:1,tag:'Technology & AI',lvl:'Beginner',lap:1,sp:['SP10'],t:'AI 101 สำหรับเจ้าของธุรกิจ: รู้จัก AI Agent และ Automation พร้อมใช้งานจริง'},
+    {id:'D1-12',day:1,room:2,slot:1,span:1,tag:'Tax & Legal',lvl:'',lap:0,sp:['SP11'],t:'จ้างคนให้ถูก เลิกจ้างให้เป็น: กฎหมายแรงงานที่เจ้าของธุรกิจต้องรู้'},
+    {id:'D1-13',day:1,room:2,slot:2,span:1,tag:'Technology & AI',lvl:'',lap:0,sp:['SP12'],t:'AI Transformation: เสริมทักษะคน ปรับกระบวนการ เตรียมองค์กรให้พร้อมทำงานร่วมกับ AI'},
+    {id:'D1-14',day:1,room:2,slot:3,span:2,tag:'Technology & AI',lvl:'Beginner',lap:1,sp:['SP13'],t:'สร้างผู้ช่วยจัดการเอกสารการเงิน จัดการบิลและใบเสร็จอัตโนมัติด้วย AI'},
+    {id:'D1-15',day:1,room:3,slot:0,span:1,tag:'Accounting & Finance',lvl:'',lap:1,sp:['SP14', 'SP15'],t:'Payroll 101: จัดการเงินเดือนพนักงานด้วยตัวเอง ตั้งแต่คำนวณเงินเดือนจนถึงจ่ายจริง'},
+    {id:'D1-16',day:1,room:3,slot:1,span:1,tag:'Accounting & Finance',lvl:'',lap:0,sp:['SP16'],t:'รู้ทันสุขภาพธุรกิจ ปรับการเงินให้แข็งแรงในยุคที่ไม่แน่นอน'},
+    {id:'D1-17',day:1,room:3,slot:2,span:1,tag:'Sales & Marketing',lvl:'',lap:0,sp:['SP17'],t:'เปิดตลาดจีนยุคใหม่: กลยุทธ์เข้าถึงลูกค้าจีน ขยายโอกาสให้แบรนด์ไทย'},
+    {id:'D1-18',day:1,room:3,slot:3,span:2,tag:'Technology & AI',lvl:'Intermediate',lap:1,sp:['SP18'],t:'สร้าง Mini App ใช้เองในบริษัท: จากไอเดียสู่เครื่องมือใช้งานจริงแบบไม่ต้องเขียนโค้ด'},
+    {id:'D2-01',day:2,room:0,slot:0,span:2,tag:'Tax & Legal',lvl:'',lap:0,sp:['SP19'],t:'รู้ทันเกมภาษี: เปิดกลยุทธ์วางแผนภาษี ช่วย SME ประหยัดเงินหลักล้าน'},
+    {id:'D2-02',day:2,room:0,slot:2,span:1,tag:'Technology & AI',lvl:'',lap:0,sp:['SP20'],t:'Small Team, Army of AI: ทีมเล็กสู้รายใหญ่ได้อย่างไร เมื่อมี AI เป็นกำลังพล'},
+    {id:'D2-03',day:2,room:0,slot:3,span:1,tag:'Sales & Marketing',lvl:'',lap:0,sp:['SP21'],t:'AI for Marketing: ให้ AI เป็นผู้ช่วยการตลาด วางกลยุทธ์และลงมือทำให้ได้ผล'},
+    {id:'D2-04',day:2,room:0,slot:4,span:1,tag:'Strategy',lvl:'',lap:0,sp:['SP22'],t:'Fireside Chat: The CEO Playbook 2027 Build Strong. Adapt Fast. Scale Smart with AI.'},
+    {id:'D2-05',day:2,room:1,slot:0,span:2,tag:'People',lvl:'',lap:0,sp:['SP23', 'SP24'],t:'From Owner-Led to Team-Led: ออกแบบองค์กรให้ทีมบริหารและขับเคลื่อนธุรกิจได้ด้วยตัวเอง'},
+    {id:'D2-06',day:2,room:1,slot:2,span:1,tag:'Tax & Legal',lvl:'',lap:0,sp:['SP25'],t:'ทำธุรกิจกับใครก็ควรรู้! วางสัญญาอย่างไรกับลูกค้า คู่ค้า และหุ้นส่วน ไม่ให้เกิดปัญหาภายหลัง'},
+    {id:'D2-07',day:2,room:1,slot:3,span:1,tag:'Tax & Legal',lvl:'',lap:0,sp:['SP26'],t:'เป็นเจ้าของบริษัทต้องรู้อะไรบ้าง? ความรับผิดและความเสี่ยงทางกฎหมายที่กรรมการ SME มักมองข้าม'},
+    {id:'D2-08',day:2,room:1,slot:4,span:1,tag:'Accounting & Finance',lvl:'',lap:0,sp:['SP27'],t:'รู้ทันกระแสเงินสด วางแผนบริหารเงินให้ธุรกิจอยู่รอดอย่างมืออาชีพ'},
+    {id:'D2-09',day:2,room:2,slot:0,span:2,tag:'Technology & AI',lvl:'Intermediate',lap:1,sp:['SP10'],t:'Always-on AI Agent: สร้างผู้ช่วยอัจฉริยะสำหรับงานหลังบ้าน'},
+    {id:'D2-10',day:2,room:2,slot:2,span:1,tag:'Sales & Marketing',lvl:'',lap:0,sp:['SP28'],t:'Customer Retention Playbook: รู้ทันสัญญาณลูกค้าหายเปลี่ยนความเสี่ยงให้เป็นโอกาสสร้างรายได้'},
+    {id:'D2-11',day:2,room:2,slot:3,span:2,tag:'Technology & AI',lvl:'Beginner',lap:1,sp:['SP29', 'SP30'],t:'AI Content Studio ฉบับเจ้าของ: สร้างภาพและคลิปสั้นโปรโมตสินค้าเองด้วย AI ลดต้นทุนโปรดักชัน'},
+    {id:'D2-12',day:2,room:3,slot:0,span:2,tag:'Technology & AI',lvl:'Beginner',lap:1,sp:['SP31'],t:'บริหารสต็อกให้แม่นขึ้นด้วย AI: คาดการณ์สินค้าและวางแผนสั่งซื้อ ให้เงินไม่จมฉบับเจ้าของธุรกิจ'},
+    {id:'D2-13',day:2,room:3,slot:2,span:1,tag:'',lvl:'',lap:0,sp:[],t:'Classroom from LINE for Business'},
+    {id:'D2-14',day:2,room:3,slot:3,span:2,tag:'Accounting & Finance',lvl:'',lap:1,sp:['SP14', 'SP15'],t:'เริ่มต้นทำบัญชีเป็นใน 3 ชั่วโมงด้วย FlowAccount และ AI'}
   ];
-  S.forEach(function(s){s.day=1});
-  // Day 2 placeholders. They mirror the Day 2 rows of the Google Sheet until the real agenda is added.
-  (function(){
-    var T='Day 2 session title to be announced : หัวข้อวันที่ 2 รอประกาศ',W='Day 2 workshop title to be announced : เวิร์กช็อปวันที่ 2 รอประกาศ';
-    var rows=[[0,AI,'Basic',1],[0,AI,'Experienced',1],[0,AI,'Basic',1],[0,AI,'Experienced',1],[0,AI,'Experienced',1],
-      [1,'Marketing','Basic',1],[1,'Marketing','Experienced',1],[1,'Marketing','Basic',1],[1,'Marketing','Experienced',1],[1,'Marketing','Experienced',1],
-      [2,'Tax & Finance','Basic',1],[2,'Tax & Finance','Experienced',1],[2,'Tax & Finance','Basic',1],[2,'Tax & Finance','Experienced',1],[2,'Tax & Finance','Experienced',1],
-      [3,'Operation','Basic',1],[3,'Operation','Experienced',1],[3,'Operation','Basic',2],[3,'Operation','Experienced',1]];
-    rows.forEach(function(r,i){S.push({id:'x'+(i+1),day:2,room:r[0],tag:r[1],lvl:r[2],span:r[3],sp:r[3],t:r[3]===2?W:T})});
-  })();
-  // Each session has a fixed time, taken from the Day/Room/Start slot columns of the sheet.
-  (function(){var acc={};S.forEach(function(s){var k=s.day+'-'+s.room;if(acc[k]===undefined)acc[k]=0;s.slot=acc[k];acc[k]+=s.span})})();
+  // a slot where no session starts (Day 2, 10.45) is only ever covered by a longer session
+  function liveSlot(d,i){return S.some(function(x){return x.day===d&&x.slot===i})}
 
   // ---------- language ----------
   var LANG_KEY='sme-expo-lang';
@@ -563,7 +612,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   try{var lv=localStorage.getItem(LANG_KEY);if(lv==='th'||lv==='en')lang=lv}catch(e){}
   var L={
     en:{
-      day:'Day', myDay:'My Day', time:'Time', venue:'Sasin Hall, 9th floor',
+      day:'Day', myDay:'My Day', time:'Time', venue:'Sasin School of Management', laptop:'Laptop required',
       lunch:'Lunch Break (12.15 - 13.00)', langName:'ENG', langAria:'Switch to Thai',
       planned:function(n){return n+' of 5 planned'},
       count:function(n){return n+' session'+(n===1?'':'s')},
@@ -601,13 +650,12 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       tagline:'BUILD STRONG. ADAPT FAST. SCALE SMART WITH AI.',
       subline:'Get your business ready to scale in a changing world',
       drops:function(w){return 'Drops in at '+w},
-      speaker:'Speaker name', role:'CEO, FlowAccount',
       noPick:'No session picked', myAgenda:'My agenda', slots:'time slots',
       imgTitle:function(d){return 'AGENDA DAY '+d}, imgBoth:'MY AGENDA', imgDay:function(d){return 'DAY '+d},
-      removeAria:'Remove session', levels:{Basic:'Basic',Experienced:'Experienced'}
+      removeAria:'Remove session'
     },
     th:{
-      day:'Day', myDay:'My Day', time:'เวลา', venue:'Sasin Hall ชั้น 9',
+      day:'Day', myDay:'My Day', time:'เวลา', venue:'Sasin School of Management', laptop:'นำโน้ตบุ๊กมาด้วย',
       lunch:'พักกลางวัน (12.15 - 13.00)', langName:'ไทย', langAria:'เปลี่ยนเป็นภาษาอังกฤษ',
       planned:function(n){return 'เลือกแล้ว '+n+' จาก 5 ช่วง'},
       count:function(n){return n+' หัวข้อ'},
@@ -645,10 +693,9 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       tagline:'BUILD STRONG. ADAPT FAST. SCALE SMART WITH AI.',
       subline:'เตรียมธุรกิจให้พร้อม Scale ในโลกที่เปลี่ยนไป',
       drops:function(w){return 'วางที่ช่วง '+w},
-      speaker:'ชื่อวิทยากร', role:'CEO, FlowAccount',
       noPick:'ยังไม่ได้เลือกหัวข้อ', myAgenda:'ตารางของฉัน', slots:'ช่วงเวลา',
       imgTitle:function(d){return 'AGENDA DAY '+d}, imgBoth:'MY AGENDA', imgDay:function(d){return 'DAY '+d},
-      removeAria:'นำหัวข้อออก', levels:{Basic:'พื้นฐาน',Experienced:'ขั้นสูง'}
+      removeAria:'นำหัวข้อออก'
     }
   };
   function T(k){return L[lang][k]}
@@ -695,13 +742,20 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   function short(t){var x=t.split(' : ')[0];return x.length>34?x.slice(0,33)+'…':x}
 
   var AVATAR='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4.2" fill="#fff"/><path d="M4 22c0-4.6 3.6-7.4 8-7.4s8 2.8 8 7.4z" fill="#fff"/></svg>';
-  function speakers(n,room){
+  function speakers(ids,room){
     var h='<div class="spk">';
-    for(var i=0;i<n;i++) h+='<div class="sp"><span class="av">'+AVATAR+'</span><div><b>'+T('speaker')+'</b><small>'+T('role')+'</small></div></div>';
+    ids.forEach(function(k){var p=SPK[k]||['',''];h+='<div class="sp"><span class="av">'+AVATAR+'</span><div><b>'+esc(p[0])+'</b><small>'+esc(p[1])+'</small></div></div>'});
     if(room) h+='<span class="rm">'+room+'</span>';
     return h+'</div>';
   }
-  function tagsHTML(s){return '<div class="tags"><span class="tag">'+esc(s.tag)+'</span><span class="lvl '+(s.lvl==='Basic'?'basic':'exp')+'">'+esc(T('levels')[s.lvl]||s.lvl)+'</span></div>'}
+  var LAPTOP='<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="4.5" width="12" height="8" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M2.2 15.5h15.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  // inline=true (cards on the board): the laptop pill sits in the same row as the category, so short cards keep room for the title
+  function tagsHTML(s,inline){
+    var lap=s.lap?'<span class="lap">'+LAPTOP+esc(T('laptop'))+'</span>':'';
+    var h=inline?'':(lap?'<div>'+lap+'</div>':'');
+    if(!s.tag&&!s.lvl&&!(inline&&lap)) return h;
+    return h+'<div class="tags"><span class="tagl">'+(s.tag?'<span class="tag">'+esc(s.tag)+'</span>':'')+(inline?lap:'')+'</span>'+(s.lvl?'<span class="lvl basic">'+esc(s.lvl)+'</span>':'')+'</div>';
+  }
 
   // ---------- rules ----------
   function ownerAt(slot,ignore){
@@ -746,7 +800,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     unplace(id);
     toast(T('removed'),function(){
       for(var i=0;i<s.span;i++){for(var k in PLAN[d]){var o=byId(k),p=PLAN[d][k];
-        if(was+i>=p&&was+i<p+o.span){toast(T('clash')(short(sTitle(o)),SLOTTXT[was+i]));return}}}
+        if(was+i>=p&&was+i<p+o.span){toast(T('clash')(short(sTitle(o)),SLOTTXT_BY[d][was+i]));return}}}
       PLAN[d][id]=was;if(day===d)tslot=freeSlot(was+s.span);save();render();
     });
   }
@@ -787,14 +841,14 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   }
 
   function freeSlot(from){
-    for(var k=0;k<5;k++){var i=((from||0)+k)%5;if(!ownerAt(i))return i}
+    for(var k=0;k<5;k++){var i=((from||0)+k)%5;if(liveSlot(day,i)&&!ownerAt(i))return i}
     return from||0;
   }
   function renderTray(){
     var avail=S.filter(function(s){return s.day===day&&placed[s.id]===undefined});
     var own=ownerAt(tslot);
     $('slotTime').textContent=SLOTTXT[tslot];
-    $('prevSlot').disabled=tslot===0;$('nextSlot').disabled=tslot===4;
+    $('prevSlot').disabled=stepSlot(-1)<0;$('nextSlot').disabled=stepSlot(1)<0;
     var items=avail.filter(function(s){return s.slot===tslot});
     $('slotMeta').textContent=own?T('inRoom')(ROOMS[own.room]):(T('count')(items.length)+(!items.length?'':(mq.matches?T('dragMob'):(COARSE?T('dragTouch'):T('dragDesk')))));
     list.innerHTML='';
@@ -822,12 +876,13 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   function renderBoard(){
     board.innerHTML='';
     function add(tag,cls,html,style){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;if(style)Object.assign(d.style,style);board.appendChild(d);return d}
-    GR.forEach(function(g,i){if(i===0)return;add('div','line',null,{gridRow:String(g)})});
+    GR.forEach(function(g,i){if(i===0||!liveSlot(day,i))return;add('div','line',null,{gridRow:String(g)})});
     SLOTS.forEach(function(t,i){add('div','tm'+(i===tslot?' sel':''),t,{gridRow:String(GR[i])})});
     add('div','lunch',T('lunch'));
     for(var s=0;s<5;s++){
-      if(ownerAt(s)) continue;
-      var c=add('div','cell'+(s===tslot?' sel':''),null,{gridRow:String(GR[s])});
+      if(ownerAt(s)||!liveSlot(day,s)) continue;
+      var two=s<4&&!liveSlot(day,s+1)&&!ownerAt(s+1);   // a long block (Day 2 morning) gets one tall empty cell
+      var c=add('div','cell'+(s===tslot?' sel':''),null,{gridRow:GR[s]+' / span '+(two?2:1)});
       c.dataset.slot=s;
     }
     Object.keys(placed).forEach(function(id){
@@ -836,7 +891,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       el.className='card placed r'+s.room+(s.span===2?' long':'');
       el.draggable=!mq.matches&&!COARSE;
       el.style.gridRow=GR[st]+' / span '+s.span;
-      el.innerHTML=tagsHTML(s)+'<div class="ttl"><span>'+esc(sTitle(s))+'</span></div>'+speakers(s.sp,ROOMS[s.room]);
+      el.innerHTML=tagsHTML(s,true)+'<div class="ttl"><span>'+esc(sTitle(s))+'</span></div>'+speakers(s.sp,ROOMS[s.room]);
       var x=document.createElement('button');x.type='button';x.className='x';x.setAttribute('aria-label',T('removeAria')+': '+sTitle(s));x.textContent='×';
       x.addEventListener('click',function(e){e.stopPropagation();removeWithUndo(id);if(e.detail===0)focusTray()});
       el.appendChild(x);
@@ -1004,8 +1059,9 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     else if(!d.wasPlaced){toast(T('missDrop'))}
   }
 
-  $('prevSlot').addEventListener('click',function(){if(tslot>0){tslot--;render()}});
-  $('nextSlot').addEventListener('click',function(){if(tslot<4){tslot++;render()}});
+  function stepSlot(dir){for(var i=tslot+dir;i>=0&&i<5;i+=dir)if(liveSlot(day,i))return i;return -1}
+  $('prevSlot').addEventListener('click',function(){var i=stepSlot(-1);if(i>=0){tslot=i;render()}});
+  $('nextSlot').addEventListener('click',function(){var i=stepSlot(1);if(i>=0){tslot=i;render()}});
   function setDock(collapsed){
     var t=$('tray'),b=$('dockToggle');
     t.classList.toggle('collapsed',collapsed);
@@ -1021,7 +1077,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   // Sends: day, the sheet session ID in each of the 5 slots, which button, language, device and a random browser ID.
   var PICKS_URL='https://script.google.com/macros/s/AKfycbwnhrL2LgctD4M5sWFt1Y8S5pUlmPwbKTHc03VhCvtlEKSuyQub2SRzhxrjCtvnpsRd/exec';
   var SHEET_ID={};
-  (function(){var n={};S.forEach(function(s){n[s.day]=(n[s.day]||0)+1;SHEET_ID[s.id]='D'+s.day+'-'+(n[s.day]<10?'0':'')+n[s.day]})})();
+  S.forEach(function(s){SHEET_ID[s.id]=s.id});
   var sentPicks={};
   function browserId(){
     try{var k='sme-expo-cid',v=localStorage.getItem(k);
@@ -1061,8 +1117,9 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
 
 
     ids.forEach(function(id){var s=byId(id),st=pl[id];
-      var end=SLOTTXT[st+s.span-1].split(' – ')[1];
-      lines.push(SLOTTXT[st].split(' – ')[0]+' – '+end+'  '+ROOMS[s.room]+'  '+sTitle(s))});
+      var tx=SLOTTXT_BY[d],end=tx[st+s.span-1].split(' – ')[1];
+      var who=s.sp.map(function(k){return SPK[k][0]}).join(', ');
+      lines.push(tx[st].split(' – ')[0]+' – '+end+'  '+ROOMS[s.room]+' ('+ROOMV[lang][s.room]+')  '+sTitle(s)+(who?' – '+who:''))});
     });
     if(!any){toast(T('addFirst'));return}
     var t=lines.join('\n');
@@ -1117,16 +1174,17 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     ds.forEach(function(d){
       var map=PLAN[d],rows=[],s=0;
       function own(sl){for(var id in map){var z=byId(id);if(sl>=map[id]&&sl<map[id]+z.span)return z}return null}
+      var tx=SLOTTXT_BY[d];
       while(s<5){
         if(s===2) rows.push({type:'lunch',h:74});
         var o=own(s);
         if(o&&map[o.id]===s){
           m.font='500 21px '+FAM;
           var lines=wrap(m,sTitle(o),CW-64,o.span===2?5:3);
-          var h=24+27+16+lines.length*30+20+o.sp*46+22;
-          rows.push({type:'s',sess:o,lines:lines,slot:s,h:Math.max(h,166)});
+          var h=(o.tag||o.lvl||o.lap?24+27+16:28)+lines.length*30+20+Math.max(1,o.sp.length)*46+22;
+          rows.push({type:'s',sess:o,lines:lines,slot:s,tx:tx,h:Math.max(h,166)});
           picked+=o.span;s+=o.span;
-        }else{rows.push({type:'free',slot:s,h:84});s+=1}
+        }else{var two=s<4&&!liveSlot(d,s+1)&&!own(s+1);rows.push({type:'free',slot:s,tx:tx,two:two,h:84});s+=two?2:1}
       }
       var ph=IN*2;rows.forEach(function(r,i){ph+=r.h+(i?RG:0)});
       days.push({d:d,rows:rows,h:ph});
@@ -1197,7 +1255,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
     // ---- a panel per day ----
     var cx=PAD+IN+TW+GAP,top=HDR;
     x.font='600 25px '+FAM;
-    var tbw=0;SLOTTXT.forEach(function(t){var q=t.split(' – ');tbw=Math.max(tbw,x.measureText(q[0]+' -').width,x.measureText(q[1]).width)});
+    var tbw=0;SLOTTXT_BY[1].concat(SLOTTXT_BY[2]).forEach(function(t){var q=t.split(' – ');tbw=Math.max(tbw,x.measureText(q[0]+' -').width,x.measureText(q[1]).width)});
     var tLeft=PAD+IN+(TW-tbw)/2;                         // left edge of the time block
     days.forEach(function(g,gi){
     var rows=g.rows;
@@ -1222,10 +1280,10 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
         y+=r.h+RG;return;
       }
       // time column
-      var end=SLOTTXT[r.slot+(r.type==='s'?r.sess.span-1:0)].split(' – ')[1];
+      var end=r.tx[r.slot+(r.type==='s'?r.sess.span-1:(r.two?1:0))].split(' – ')[1];
       var tcy=y+r.h/2;
       x.textAlign='left';x.fillStyle=BLUE;x.font='600 25px '+FAM;
-      x.fillText(SLOTTXT[r.slot].split(' – ')[0]+' -',tLeft,tcy-18);
+      x.fillText(r.tx[r.slot].split(' – ')[0]+' -',tLeft,tcy-18);
       x.fillText(end,tLeft,tcy+18);
 
       if(r.type==='free'){
@@ -1244,32 +1302,46 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       x.fillStyle=hexA(col,.08);x.fillRect(cx,y,CW,r.h);x.restore();
       rr(x,cx,y,CW,r.h,20);x.strokeStyle=col;x.lineWidth=2.5;x.stroke();
 
-      var ix=cx+p;
-      // tag + level
+      var ix=cx+p,pillX=ix,hasRow=ss.tag||ss.lvl||ss.lap;
+      // category, laptop and level pills
       x.font='600 14px '+FAM;x.textAlign='left';
-      var tgW=x.measureText(ss.tag).width+26;
-      rr(x,ix,y+24,tgW,27,13.5);x.fillStyle=col;x.fill();
-      x.fillStyle='#fff';x.fillText(ss.tag,ix+13,y+38);
-      var lvW=x.measureText(T('levels')[ss.lvl]||ss.lvl).width+28,lx=cx+CW-p-lvW;
-      rr(x,lx,y+25,lvW,25,12.5);
-      if(ss.lvl==='Basic'){x.fillStyle='#fff';x.fill();x.strokeStyle=NAVY;x.lineWidth=2;x.stroke();x.fillStyle=NAVY}
-      else{x.fillStyle=NAVY;x.fill();x.fillStyle='#fff'}
-      x.fillText(T('levels')[ss.lvl]||ss.lvl,lx+14,y+38);
+      if(ss.tag){
+        var tgW=x.measureText(ss.tag).width+26;
+        rr(x,pillX,y+24,tgW,27,13.5);x.fillStyle=col;x.fill();
+        x.fillStyle='#fff';x.fillText(ss.tag,pillX+13,y+38);pillX+=tgW+10;
+      }
+      if(ss.lap){
+        var lt=T('laptop'),lpW=x.measureText(lt).width+48;
+        rr(x,pillX,y+24,lpW,27,13.5);x.fillStyle=hexA(col,.14);x.fill();
+        x.strokeStyle=NAVY;x.lineWidth=1.6;                // small laptop icon
+        rr(x,pillX+12,y+30.5,15,10,1.6);x.stroke();
+        x.beginPath();x.moveTo(pillX+10,y+44);x.lineTo(pillX+29,y+44);x.stroke();
+        x.fillStyle=NAVY;x.fillText(lt,pillX+35,y+38);
+      }
+      if(ss.lvl){
+        var lvW=x.measureText(ss.lvl).width+28,lx=cx+CW-p-lvW;
+        rr(x,lx,y+25,lvW,25,12.5);
+        x.fillStyle='#fff';x.fill();x.strokeStyle=NAVY;x.lineWidth=2;x.stroke();x.fillStyle=NAVY;
+        x.fillText(ss.lvl,lx+14,y+38);
+      }
       // title
       x.fillStyle=INK;x.font='500 21px '+FAM;
-      var ty2=y+24+27+16;
+      var ty2=hasRow?y+24+27+16:y+28;
       r.lines.forEach(function(l,i){x.fillText(l,ix,ty2+i*30+15)});
       // speakers + room
       var sy=ty2+r.lines.length*30+20;
-      for(var k=0;k<ss.sp;k++){
+      x.font='600 16px '+FAM;
+      var spW=CW-p*2-48-x.measureText(ROOMS[ss.room]).width-24;   // speaker text stops before the room name
+      for(var k=0;k<ss.sp.length;k++){
+        var who=SPK[ss.sp[k]]||['',''];
         var ay=sy+k*46,acx=ix+19,acy=ay+20;
         var ag=x.createLinearGradient(acx-19,acy-19,acx+19,acy+19);ag.addColorStop(0,col);ag.addColorStop(1,mix(col,.35));
         x.beginPath();x.arc(acx,acy,19,0,Math.PI*2);x.fillStyle=ag;x.fill();
         x.save();x.beginPath();x.arc(acx,acy,19,0,Math.PI*2);x.clip();
         x.fillStyle='#fff';x.beginPath();x.arc(acx,acy-4,6.6,0,Math.PI*2);x.fill();
         x.beginPath();x.arc(acx,acy+18,14,Math.PI,0);x.fill();x.restore();
-        x.textAlign='left';x.fillStyle=INK;x.font='600 15px '+FAM;x.fillText(T('speaker'),ix+48,ay+13);
-        x.fillStyle=MUTED;x.font='400 13px '+FAM;x.fillText(T('role'),ix+48,ay+32);
+        x.textAlign='left';x.fillStyle=INK;x.font='600 15px '+FAM;x.fillText(wrap(x,who[0],spW,1)[0]||'',ix+48,ay+13);
+        x.fillStyle=MUTED;x.font='400 13px '+FAM;x.fillText(wrap(x,who[1],spW,1)[0]||'',ix+48,ay+32);
       }
       x.textAlign='right';x.fillStyle=col;x.font='600 16px '+FAM;
       x.fillText(ROOMS[ss.room],cx+CW-p,sy+18);
@@ -1295,7 +1367,8 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
   }
 
   // ---------- add to calendar (.ics) ----------
-  var SLOT_TIMES=[[9,0,10,30],[10,45,12,15],[13,0,14,30],[14,45,16,15],[16,30,18,0]];
+  var SLOT_TIMES_BY={1:[[9,0,10,30],[10,45,12,15],[13,0,14,30],[14,45,16,15],[16,30,18,0]],
+                     2:[[10,0,12,15],[10,0,12,15],[13,0,14,30],[14,45,16,15],[16,30,18,0]]};
   var DAY_YMD={1:[2026,12,18],2:[2026,12,19]};
   function icsPad(n){return (n<10?'0':'')+n}
   function icsStamp(y,mo,d,h,mi){
@@ -1318,7 +1391,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
       var ymd=DAY_YMD[d],ids=Object.keys(PLAN[d]).sort(function(a,b){return PLAN[d][a]-PLAN[d][b]});
       ids.forEach(function(id){
         var s=byId(id),start=PLAN[d][id];
-        var t1=SLOT_TIMES[start],t2=SLOT_TIMES[start+s.span-1];
+        var t1=SLOT_TIMES_BY[d][start],t2=SLOT_TIMES_BY[d][start+s.span-1];
         var dtStart=icsStamp(ymd[0],ymd[1],ymd[2],t1[0],t1[1]);
         var dtEnd=icsStamp(ymd[0],ymd[1],ymd[2],t2[2],t2[3]);
         n++;
@@ -1328,8 +1401,10 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
         lines.push(icsFold('DTSTART:'+dtStart));
         lines.push(icsFold('DTEND:'+dtEnd));
         lines.push(icsFold('SUMMARY:'+icsEscape(sTitle(s))));
-        lines.push(icsFold('DESCRIPTION:'+icsEscape(s.tag+' · '+s.lvl+' · '+ROOMS[s.room])));
-        lines.push(icsFold('LOCATION:'+icsEscape(ROOMS[s.room]+', '+T('venue'))));
+        var who=s.sp.map(function(k){return SPK[k][0]+' ('+SPK[k][1]+')'}).join('\n');
+        var info=[s.tag,s.lvl,s.lap?T('laptop'):''].filter(Boolean).join(' · ');
+        var desc=[info,who].filter(Boolean).join('\n');if(desc)lines.push(icsFold('DESCRIPTION:'+icsEscape(desc)));
+        lines.push(icsFold('LOCATION:'+icsEscape(ROOMS[s.room]+' ('+ROOMV[lang][s.room]+'), '+T('venue'))));
         lines.push('END:VEVENT');
       });
     });
@@ -1446,7 +1521,7 @@ html.touch.dragging-now .tcard,html.touch.dragging-now .placed{touch-action:none
 
   // ---------- day switch ----------
   function setDay(d){
-    day=d;placed=PLAN[d];tslot=freeSlot(0);
+    day=d;placed=PLAN[d];SLOTS=SLOTS_BY[d];SLOTTXT=SLOTTXT_BY[d];tslot=freeSlot(0);
     $('dayTitle').innerHTML=T('imgTitle')(d).replace(/(\d+)$/,'<span class="dayno">$1</span>');$('dayDate').textContent=DAYS[d].date;
     $('png').querySelector('span').textContent=T('dlDay')(d);
     $('dayBadge').textContent=T('day')+' '+d+' · '+DAYS[d].date;
